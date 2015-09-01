@@ -1,5 +1,6 @@
 """
 Fileflood
+A simple framework (not only) for static sites generation.
 
 TODO: Add descripiton here
 
@@ -15,8 +16,8 @@ import posixpath
 import shutil
 from logging import debug
 
-__author__ = ''
-__version__ = '0.0.1'
+__author__ = 'Kasper'
+__version__ = '0.0.1.dev1'
 
 
 # Minimum supported python: 3.2
@@ -137,7 +138,7 @@ class Flood:
         self.source = os.path.join(self.path, source)
         self.output = os.path.join(self.path, output)
 
-        # TODO: PRo Exceptions raising
+        # TODO: Change this to a professional exception raising
 
         # Path not found
         os.stat(self.path)
@@ -232,3 +233,10 @@ class Flood:
         for i in plugins:
             if callable(i):
                 i(self)
+
+# Testing
+
+from unittest import TestCase
+
+class PluginTest(TestCase):
+    pass
