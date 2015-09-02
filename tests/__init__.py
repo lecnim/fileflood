@@ -95,7 +95,9 @@ class FunctionalTest(unittest.TestCase):
 
         # Clear build directory
         self.test_dir = os.path.dirname(inspect.getfile(self.__class__))
-        shutil.rmtree(os.path.join(self.test_dir, OUTPUT_DIR))
+        output = os.path.join(self.test_dir, OUTPUT_DIR)
+        if os.path.exists(output):
+            shutil.rmtree(output)
 
 
     # Comparing outputs.
