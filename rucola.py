@@ -8,6 +8,7 @@ TODO: Add descripiton here
 
 # TODO: Logging msgs
 # TODO: Clear code
+# TODO: Clear output during init of Rucola() ?
 
 import os
 import sys
@@ -78,7 +79,9 @@ def pathmatch(path, pattern):
             return False
 
 
-class Content:
+
+
+class ContentReader:
     def __init__(self, path):
         self.path = path
 
@@ -97,24 +100,23 @@ class File(dict):
             content = ''
         self['content'] = content
 
+    def __getitem__(self, key):
+
+        if key == 'content':
+            x = dict.__getitem__(self, key)
+            if isinstance(x, ContentReader):
+                return x.read()
+        return dict.__getitem__(self, key)
+
     def has_buffer(self):
         x = dict.__getitem__(self, 'content')
-        return isinstance(x, Content)
+        return isinstance(x, ContentReader)
 
     def get_buffer(self):
         return dict.__getitem__(self, 'content')
 
 
-    def __getitem__(self, key):
-
-        if key == 'content':
-
-            x = dict.__getitem__(self, key)
-            if isinstance(x, Content):
-                return x.read()
-
-        return dict.__getitem__(self, key)
-
+    # Shortcuts
 
     @property
     def path(self):
@@ -140,10 +142,8 @@ class Rucola:
         info('\nLoading: ' + path)
 
         self.path = os.path.abspath(path)
-        # TODO: set as a property, disable modifiation
-        self.source = os.path.join(self.path, source)
-        # TODO: set as a property
-        self._output = None
+        self._source = os.path.join(self.path, source)
+        self._output = ''
         self.output = os.path.join(self.path, output)
 
         # TODO: Change this to a professional exception raising
@@ -168,6 +168,9 @@ class Rucola:
 
         self.files = self._find_files()
 
+    @property
+    def source(self):
+        return self._source
 
     @property
     def output(self):
@@ -193,7 +196,7 @@ class Rucola:
 
                 debug(p)
 
-                result.append(File(p, Content(os.path.join(path, f))))
+                result.append(File(p, ContentReader(os.path.join(path, f))))
 
         return result
 
@@ -214,7 +217,9 @@ class Rucola:
             shutil.copy(file.get_buffer().path, os.path.join(self.output, file.path))
         else:
 
-            with open(os.path.join(self.output, file.path), 'w') as f:
+            mode = 'wb' if isinstance(file.content, bytes) else 'w'
+
+            with open(os.path.join(self.output, file.path), mode) as f:
                 f.write(file.content)
 
     def build(self, target='**/*'):
@@ -275,8 +280,6 @@ class Rucola:
 
         info('Creating file: ' + path)
 
-        # TODO: test binary content
-
         f = File(path, content)
         self.files.append(f)
         return f
@@ -285,14 +288,6 @@ class Rucola:
 
         for i in plugins:
             if callable(i):
-
                 info('Using plugin: ' + repr(i))
                 i(self)
-        # TODO: Returns what? Self? Used plugin?
-
-# Testing
-
-from unittest import TestCase
-
-class PluginTest(TestCase):
-    pass
+        return self
