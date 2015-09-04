@@ -217,49 +217,49 @@ class Rucola:
             with open(os.path.join(self.output, file.path), 'w') as f:
                 f.write(file.content)
 
-    def build(self, path='**/*'):
+    def build(self, target='**/*'):
+        """Builds files.
 
-        # TODO: Feature: Multiple paths argument like this: build('first/path', 'second/one/*', 'etc/**/*')
+        Args:
+            target: Accepts str or File object.
+        """
 
-        info('Building: ' + str(path))
+        info('Building: ' + str(target))
 
         # Create missing output dir
         os.makedirs(self.output, exist_ok=True)
 
-        if isinstance(path, File):
-            self._build_file(path)
+        if isinstance(target, File):
+            self._build_file(target)
+            return [target]
 
         else:
-            for file in self.find(path):
+            result = []
+            for file in self.find(target):
                 self._build_file(file)
+                result.append(file)
+            return result
 
-        # TODO: Returns what? Yields built files?
+    def find(self, *patterns):
+        """
+        Returns list of all files that matches a given patterns.
 
-        # If it yields built files, it is possible to remove them
-        # from self.files like this:
-        #
-        # for i in self.build('*.jpg'):
-        #   self.files.remove(i)
-        # self.use(some_plugin_that_we_dont_wont_to_work_with_jpg)
-        # self.build()
+        Order of paths is not changing the order of returned files.
+        """
+
+        return [i for i in self.ifind(*patterns)]
 
 
-    def find(self, path):
-
-        # TODO: Feature: Multiple paths argument like this: find('first/path', 'second/one/*', 'etc/**/*')
-        # TODO: Test order of returned files
-        # TODO: Test returned object
-        # TODO: Test if it is possible to safe-remove in-place: for i in app.files: app.files.remove(i)
-
-        return [i for i in self.files if pathmatch(i.path, path)]
-
-    def ifind(self, path):
-
-        # TODO: test this
+    def ifind(self, *patterns):
+        """
+        Not safe-remove in place.
+        """
 
         for file in self.files:
-            if pathmatch(file.path, path):
-                yield file
+            for p in patterns:
+                if pathmatch(file.path, p):
+                    yield file
+                    break
 
     def clear_output(self):
 

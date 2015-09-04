@@ -1,4 +1,5 @@
 import os.path
+import types
 
 from rucola import Rucola, File, SOURCE_DIR, OUTPUT_DIR, pathmatch
 from tests import BaseTest
@@ -182,15 +183,17 @@ class TestRucola(BaseTest):
     def example_app(self, **kwargs):
         self.create_dir('src')
         self.create_file('src/index.md', 'hello')
+        self.create_file('src/logo.jpg')
         self.create_dir('src/posts')
         self.create_file('src/posts/a.md', 'apple')
         self.create_file('src/posts/b.md', 'banana')
+        self.create_file('src/posts/image.jpg')
 
         if not kwargs:
             kwargs = {'source': 'src', 'output': 'build'}
 
-        f = Rucola('.', **kwargs)
-        return f
+        r = Rucola('.', **kwargs)
+        return r
 
     # basic tests
 
@@ -199,12 +202,12 @@ class TestRucola(BaseTest):
 
         self.create_dir(SOURCE_DIR)
 
-        f = Rucola('.')
+        r = Rucola('.')
 
-        self.assertEqual(f.path, os.path.abspath('.'))
-        self.assertEqual(f.source, os.path.abspath(SOURCE_DIR))
-        self.assertEqual(f.output, os.path.abspath(OUTPUT_DIR))
-        self.assertListEqual(f.files, [])
+        self.assertEqual(r.path, os.path.abspath('.'))
+        self.assertEqual(r.source, os.path.abspath(SOURCE_DIR))
+        self.assertEqual(r.output, os.path.abspath(OUTPUT_DIR))
+        self.assertListEqual(r.files, [])
 
     def test_init(self):
 
@@ -213,23 +216,23 @@ class TestRucola(BaseTest):
         self.create_dir('src/a')
         self.create_file('src/a.txt')
 
-        f = Rucola('.', source='src', output='ready')
+        r = Rucola('.', source='src', output='ready')
 
-        self.assertEqual(f.path, os.path.abspath('.'))
-        self.assertEqual(f.source, os.path.abspath('src'))
-        self.assertEqual(f.output, os.path.abspath('ready'))
+        self.assertEqual(r.path, os.path.abspath('.'))
+        self.assertEqual(r.source, os.path.abspath('src'))
+        self.assertEqual(r.output, os.path.abspath('ready'))
 
-        x = [i.path for i in f.files]
+        x = [i.path for i in r.files]
         self.assertCountEqual(x, ['foo.txt', 'a.txt'])
 
     # TODO: ignore argument
 
     # def test_init_ignore(self):
     #
-    #     f = self.example_app(ignore='index.md')
+    #     r = self.example_app(ignore='index.md')
     #     self.assertIsNone(f.get('index.md'))
     #
-    #     f = self.example_app(ignore=join('**', '*.md'))
+    #     r = self.example_app(ignore=join('**', '*.md'))
     #     self.assertIsNone(f.get('index.md'))
     #     self.assertIsNone(f.get('posts/a.md'))
     #     self.assertIsNone(f.get('posts/b.md'))
@@ -264,25 +267,48 @@ class TestRucola(BaseTest):
 
     def test_build_path(self):
 
-        self.example_app().build('index.md')
+        f = self.example_app().build('index.md')
 
         self.assertEqual(self.read_file('build/index.md'), 'hello')
+        self.assertIsInstance(f[0], File)
 
     def test_build_file(self):
 
-        f = self.example_app()
-        f.build(f.get('index.md'))
+        r = self.example_app()
+        f = r.build(r.get('index.md'))
 
         self.assertEqual(self.read_file('build/index.md'), 'hello')
+        self.assertIsInstance(f[0], File)
 
     def test_build_recursive(self):
 
-        f = self.example_app()
-        f.build('**/*.md')
+        r = self.example_app()
+        r.build('**/*.md')
 
         self.assertEqual(self.read_file('build/index.md'), 'hello')
         self.assertEqual(self.read_file('build/posts/a.md'), 'apple')
         self.assertEqual(self.read_file('build/posts/b.md'), 'banana')
+
+    def test_build_return(self):
+
+        r = self.example_app()
+        files = r.build('posts/*.md')
+
+        self.assertEqual(self.read_file('build/posts/a.md'), 'apple')
+        self.assertEqual(self.read_file('build/posts/b.md'), 'banana')
+        self.assertCountEqual(
+            files, [r.get('posts/a.md'),
+                    r.get('posts/b.md')]
+        )
+
+    def test_build_safe_delete(self):
+
+        r = self.example_app()
+        for i in r.build('posts/*.md'):
+            r.files.remove(i)
+
+        self.assertFalse(r.get('posts/a.md') in r.files)
+        self.assertFalse(r.get('posts/b.md') in r.files)
 
     # get()
 
@@ -291,8 +317,8 @@ class TestRucola(BaseTest):
         self.create_dir('src')
         self.create_file('src/fruit.txt', 'banana')
 
-        f = Rucola('.', source='src')
-        i = f.get('fruit.txt')
+        r = Rucola('.', source='src')
+        i = r.get('fruit.txt')
 
         self.assertIsNotNone(i)
         self.assertEqual(i.content, 'banana')
@@ -301,21 +327,71 @@ class TestRucola(BaseTest):
     def test_get_nothing(self):
         """get should returns None if a file is not found"""
 
-        f = self.example_app()
-        self.assertIsNone(f.get('not_found'))
+        r = self.example_app()
+        self.assertIsNone(r.get('not_found'))
 
-    # find() # TODO:
+    # find()
 
     def test_find(self):
-        # TODO: it returns iterator or list?
 
-        self.create_dir('src')
-        self.create_file('src/foo.txt', 'banana')
-        self.create_file('src/bar.txt', 'apple')
+        r = self.example_app()
+        files = r.find('**/*.jpg')
 
-        f = Rucola('.', source='src')
-        # TODO: detailed tests
-        self.assertEqual(len([i for i in f.find('*.txt')]), 2)
+        self.assertCountEqual(
+            files, [r.get('logo.jpg'),
+                    r.get('posts/image.jpg')]
+        )
+
+    def test_find_nothing(self):
+        self.assertFalse(self.example_app().find('404.html'))
+
+    def test_find_multiple(self):
+
+        r = self.example_app()
+        files = r.find('*.jpg', 'posts/*.jpg')
+
+        self.assertCountEqual(
+            files, [r.get('logo.jpg'),
+                    r.get('posts/image.jpg')]
+        )
+
+        # No multiple instances of one file in returned list
+        files = r.find('*.jpg', '*.jpg')
+        self.assertListEqual(files, [r.get('logo.jpg')])
+
+    def test_find_multiple_recursively(self):
+
+        r = self.example_app()
+        files = r.find('posts/a.md', '**/*.md')
+
+        self.assertCountEqual(
+            files, [r.get('index.md'),
+                    r.get('posts/a.md'),
+                    r.get('posts/b.md')]
+        )
+
+    def test_find_safe_delete(self):
+
+        r = self.example_app()
+
+        for i in r.find('**/*.md'):
+            r.files.remove(i)
+
+        self.assertFalse(r.find('**/*.md'))
+
+    def test_ifind(self):
+
+        r = self.example_app()
+        files = r.ifind('**/*.md')
+
+        self.assertIsInstance(files, types.GeneratorType)
+        files = [i for i in files]
+        self.assertEqual(3, len(files))
+        self.assertCountEqual(
+            files, [r.get('index.md'),
+                    r.get('posts/a.md'),
+                    r.get('posts/b.md')]
+        )
 
     # create()
 
@@ -323,22 +399,22 @@ class TestRucola(BaseTest):
         """create() should creates and returns a correct file"""
 
         self.create_dir(SOURCE_DIR)
-        f = Rucola('.', output='build')
+        r = Rucola('.', output='build')
 
-        file = f.create('foo.html', 'bar')
+        file = r.create('foo.html', 'bar')
         self.assertIsInstance(file, File)
         self.assertEqual(file['path'], 'foo.html')
         self.assertEqual(file['content'], 'bar')
 
-        file = f.create('bar.html')
+        file = r.create('bar.html')
         self.assertEqual(file['content'], '')
 
     def test_create_utf_content(self):
         """create() should supports the utf content"""
 
-        f = self.example_app()
-        f.create('utf', 'ĄŚŹ当世')
-        f.build('utf')
+        r = self.example_app()
+        r.create('utf', 'ĄŚŹ当世')
+        r.build('utf')
 
         self.assertEqual(self.read_file('build/utf'),'ĄŚŹ当世')
 
@@ -352,11 +428,11 @@ class TestRucola(BaseTest):
             app.happy = True
 
         self.create_dir(SOURCE_DIR)
-        f = Rucola('.')
-        f.happy = False
-        f.use(plugin)
+        r = Rucola('.')
+        r.happy = False
+        r.use(plugin)
 
-        self.assertTrue(f.happy)
+        self.assertTrue(r.happy)
 
     def test_use_many_plugins(self):
 
@@ -366,28 +442,28 @@ class TestRucola(BaseTest):
             app.test += 'B'
 
         self.create_dir(SOURCE_DIR)
-        f = Rucola('.')
-        f.test = ''
-        f.use(a, b)
+        r = Rucola('.')
+        r.test = ''
+        r.use(a, b)
 
-        self.assertEqual('AB', f.test)
+        self.assertEqual('AB', r.test)
 
     # clear_output()
 
     def test_clear_output(self):
 
-        f = self.example_app()
-        f.build()
+        r = self.example_app()
+        r.build()
 
-        self.assertTrue(f.clear_output())
+        self.assertTrue(r.clear_output())
         self.assertListEqual(os.listdir('build'), [])
 
     def test_cleat_empty_output(self):
 
         self.create_dir(SOURCE_DIR)
         self.create_dir(OUTPUT_DIR)
-        f = Rucola('.')
-        f.clear_output()
+        r = Rucola('.')
+        r.clear_output()
 
         self.assertListEqual(os.listdir('build'), [])
 
