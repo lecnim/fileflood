@@ -78,14 +78,14 @@ def pathmatch(path, pattern):
         elif a_set != b_set:
             return False
 
-
+# Main classes
 
 
 class ContentReader:
     def __init__(self, path):
         self.path = path
 
-    def read(self):
+    def __call__(self, *args, **kwargs):
         with open(self.path) as f:
             return f.read()
 
@@ -104,9 +104,11 @@ class File(dict):
 
         if key == 'content':
             x = dict.__getitem__(self, key)
-            if isinstance(x, ContentReader):
-                return x.read()
+            if callable(x):
+                return x()
         return dict.__getitem__(self, key)
+
+    #
 
     def has_buffer(self):
         x = dict.__getitem__(self, 'content')
@@ -114,7 +116,6 @@ class File(dict):
 
     def get_buffer(self):
         return dict.__getitem__(self, 'content')
-
 
     # Shortcuts
 

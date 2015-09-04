@@ -174,6 +174,14 @@ class TestFile(BaseTest):
                                  'content': '',
                                  'fruit': 'banana'})
 
+    def test_content_call(self):
+
+        def x():
+            return 'banana'
+
+        f = File('foo', content=x)
+        self.assertEqual('banana', f.content)
+
 
 class TestRucola(BaseTest):
     """Rucola"""
@@ -246,14 +254,6 @@ class TestRucola(BaseTest):
         self.create_dir('project')
         self.assertRaises(OSError, Rucola, 'project')
 
-    def test_build(self):
-        """should build a file in the correct output"""
-
-        self.create_dir(SOURCE_DIR)
-        self.create_file(SOURCE_DIR + '/foo.html', 'test')
-        Rucola('.').build()
-        self.assertEqual(self.read_file(OUTPUT_DIR + '/foo.html'), 'test')
-
     def test_output(self):
 
         self.create_dir(SOURCE_DIR)
@@ -264,6 +264,16 @@ class TestRucola(BaseTest):
         self.assertEqual(self.read_file('ready/foo.txt'), 'test')
 
     # build()
+
+    def test_build(self):
+
+        self.example_app().build()
+
+        self.assertEqual(self.read_file('build/index.md'), 'hello')
+        self.assertEqual(self.read_file('build/logo.jpg'), '')
+        self.assertEqual(self.read_file('build/posts/a.md'), 'apple')
+        self.assertEqual(self.read_file('build/posts/b.md'), 'banana')
+        self.assertEqual(self.read_file('build/posts/image.jpg'), '')
 
     def test_build_path(self):
 
@@ -417,6 +427,15 @@ class TestRucola(BaseTest):
         r.build('utf')
 
         self.assertEqual(self.read_file('build/utf'),'ĄŚŹ当世')
+
+    def test_create_bytes(self):
+
+        r = self.example_app()
+        r.create('bytes', b'1234')
+        r.build()
+
+        self.assertEqual(self.read_file('build/bytes'), '1234')
+
 
     # use()
 
