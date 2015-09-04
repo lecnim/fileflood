@@ -1,12 +1,13 @@
 """
-Fileflood
+Rucola
 A simple framework (not only) for static sites generation.
 
 TODO: Add descripiton here
 
 """
 
-# TODO: Add debug msgs
+# TODO: Logging msgs
+# TODO: Clear code
 
 import os
 import sys
@@ -14,7 +15,9 @@ import fnmatch
 import re
 import posixpath
 import shutil
-from logging import debug
+from logging import debug, info, basicConfig
+
+basicConfig(format='%(message)s', level=0)
 
 __author__ = 'Kasper'
 __version__ = '0.0.1.dev1'
@@ -31,7 +34,7 @@ OUTPUT_DIR = 'build'
 
 # Path match
 
-SEP = os.sep
+SEP = '/'  # os.sep
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -130,12 +133,17 @@ class File(dict):
         self['content'] = value
 
 
-class Flood:
+class Rucola:
 
     def __init__(self, path, source=SOURCE_DIR, output=OUTPUT_DIR):
 
+        info('\nLoading: ' + path)
+
         self.path = os.path.abspath(path)
+        # TODO: set as a property, disable modifiation
         self.source = os.path.join(self.path, source)
+        # TODO: set as a property
+        self._output = None
         self.output = os.path.join(self.path, output)
 
         # TODO: Change this to a professional exception raising
@@ -146,6 +154,9 @@ class Flood:
         # Source not found
         os.stat(self.source)
 
+        self._pathmatch = None
+
+
 
         # try:
         #     f = open(path)
@@ -155,10 +166,20 @@ class Flood:
         #     else:
         #         raise
 
-        self.files = self._get_files()
+        self.files = self._find_files()
 
 
-    def _get_files(self):
+    @property
+    def output(self):
+        return self._output
+
+    @output.setter
+    def output(self, path):
+        info('Output: ' + path)
+        self._output = path
+
+
+    def _find_files(self):
 
         result = []
 
@@ -169,6 +190,9 @@ class Flood:
                 p = os.path.relpath(os.path.join(path, f), self.source)
                 # convert \\ to /
                 p = posixpath.join(*p.split(os.sep))
+
+                debug(p)
+
                 result.append(File(p, Content(os.path.join(path, f))))
 
         return result
@@ -182,7 +206,7 @@ class Flood:
 
     def _build_file(self, file):
 
-        debug('building file: ' + file.path)
+        debug(file.path)
 
         os.makedirs(os.path.join(self.output, os.path.dirname(file.path)), exist_ok=True)
 
@@ -195,7 +219,9 @@ class Flood:
 
     def build(self, path='**/*'):
 
-        debug('build()')
+        # TODO: Feature: Multiple paths argument like this: build('first/path', 'second/one/*', 'etc/**/*')
+
+        info('Building: ' + str(path))
 
         # Create missing output dir
         os.makedirs(self.output, exist_ok=True)
@@ -207,8 +233,29 @@ class Flood:
             for file in self.find(path):
                 self._build_file(file)
 
+        # TODO: Returns what? Yields built files?
+
+        # If it yields built files, it is possible to remove them
+        # from self.files like this:
+        #
+        # for i in self.build('*.jpg'):
+        #   self.files.remove(i)
+        # self.use(some_plugin_that_we_dont_wont_to_work_with_jpg)
+        # self.build()
+
 
     def find(self, path):
+
+        # TODO: Feature: Multiple paths argument like this: find('first/path', 'second/one/*', 'etc/**/*')
+        # TODO: Test order of returned files
+        # TODO: Test returned object
+        # TODO: Test if it is possible to safe-remove in-place: for i in app.files: app.files.remove(i)
+
+        return [i for i in self.files if pathmatch(i.path, path)]
+
+    def ifind(self, path):
+
+        # TODO: test this
 
         for file in self.files:
             if pathmatch(file.path, path):
@@ -217,12 +264,18 @@ class Flood:
     def clear_output(self):
 
         if os.path.exists(self.output):
+            info('Clearing output directory')
+
             shutil.rmtree(self.output)
             os.mkdir(self.output)
             return True
         return False
 
     def create(self, path, content=''):
+
+        info('Creating file: ' + path)
+
+        # TODO: test binary content
 
         f = File(path, content)
         self.files.append(f)
@@ -232,7 +285,10 @@ class Flood:
 
         for i in plugins:
             if callable(i):
+
+                info('Using plugin: ' + repr(i))
                 i(self)
+        # TODO: Returns what? Self? Used plugin?
 
 # Testing
 

@@ -1,6 +1,6 @@
 import os.path
 
-from fileflood import Flood, File, SOURCE_DIR, OUTPUT_DIR, pathmatch
+from rucola import Rucola, File, SOURCE_DIR, OUTPUT_DIR, pathmatch
 from tests import BaseTest
 
 join = os.path.join
@@ -174,8 +174,8 @@ class TestFile(BaseTest):
                                  'fruit': 'banana'})
 
 
-class TestFlood(BaseTest):
-    """Flood"""
+class TestRucola(BaseTest):
+    """Rucola"""
 
     # helpers
 
@@ -189,7 +189,7 @@ class TestFlood(BaseTest):
         if not kwargs:
             kwargs = {'source': 'src', 'output': 'build'}
 
-        f = Flood('.', **kwargs)
+        f = Rucola('.', **kwargs)
         return f
 
     # basic tests
@@ -199,7 +199,7 @@ class TestFlood(BaseTest):
 
         self.create_dir(SOURCE_DIR)
 
-        f = Flood('.')
+        f = Rucola('.')
 
         self.assertEqual(f.path, os.path.abspath('.'))
         self.assertEqual(f.source, os.path.abspath(SOURCE_DIR))
@@ -213,7 +213,7 @@ class TestFlood(BaseTest):
         self.create_dir('src/a')
         self.create_file('src/a.txt')
 
-        f = Flood('.', source='src', output='ready')
+        f = Rucola('.', source='src', output='ready')
 
         self.assertEqual(f.path, os.path.abspath('.'))
         self.assertEqual(f.source, os.path.abspath('src'))
@@ -237,18 +237,18 @@ class TestFlood(BaseTest):
     def test_source_not_found(self):
 
         # Missing main directory.
-        self.assertRaises(OSError, Flood, 'project')
+        self.assertRaises(OSError, Rucola, 'project')
 
         # Missing source directory.
         self.create_dir('project')
-        self.assertRaises(OSError, Flood, 'project')
+        self.assertRaises(OSError, Rucola, 'project')
 
     def test_build(self):
         """should build a file in the correct output"""
 
         self.create_dir(SOURCE_DIR)
         self.create_file(SOURCE_DIR + '/foo.html', 'test')
-        Flood('.').build()
+        Rucola('.').build()
         self.assertEqual(self.read_file(OUTPUT_DIR + '/foo.html'), 'test')
 
     def test_output(self):
@@ -256,7 +256,7 @@ class TestFlood(BaseTest):
         self.create_dir(SOURCE_DIR)
         self.create_file(SOURCE_DIR + '/foo.txt', 'test')
 
-        Flood('.', output='ready').build()
+        Rucola('.', output='ready').build()
 
         self.assertEqual(self.read_file('ready/foo.txt'), 'test')
 
@@ -291,7 +291,7 @@ class TestFlood(BaseTest):
         self.create_dir('src')
         self.create_file('src/fruit.txt', 'banana')
 
-        f = Flood('.', source='src')
+        f = Rucola('.', source='src')
         i = f.get('fruit.txt')
 
         self.assertIsNotNone(i)
@@ -313,7 +313,7 @@ class TestFlood(BaseTest):
         self.create_file('src/foo.txt', 'banana')
         self.create_file('src/bar.txt', 'apple')
 
-        f = Flood('.', source='src')
+        f = Rucola('.', source='src')
         # TODO: detailed tests
         self.assertEqual(len([i for i in f.find('*.txt')]), 2)
 
@@ -323,7 +323,7 @@ class TestFlood(BaseTest):
         """create() should creates and returns a correct file"""
 
         self.create_dir(SOURCE_DIR)
-        f = Flood('.', output='build')
+        f = Rucola('.', output='build')
 
         file = f.create('foo.html', 'bar')
         self.assertIsInstance(file, File)
@@ -352,7 +352,7 @@ class TestFlood(BaseTest):
             app.happy = True
 
         self.create_dir(SOURCE_DIR)
-        f = Flood('.')
+        f = Rucola('.')
         f.happy = False
         f.use(plugin)
 
@@ -366,7 +366,7 @@ class TestFlood(BaseTest):
             app.test += 'B'
 
         self.create_dir(SOURCE_DIR)
-        f = Flood('.')
+        f = Rucola('.')
         f.test = ''
         f.use(a, b)
 
@@ -386,7 +386,7 @@ class TestFlood(BaseTest):
 
         self.create_dir(SOURCE_DIR)
         self.create_dir(OUTPUT_DIR)
-        f = Flood('.')
+        f = Rucola('.')
         f.clear_output()
 
         self.assertListEqual(os.listdir('build'), [])

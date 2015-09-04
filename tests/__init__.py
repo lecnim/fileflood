@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import shutil
 import os
-from fileflood import OUTPUT_DIR
+from rucola import OUTPUT_DIR
 
 
 class BaseTest(unittest.TestCase):

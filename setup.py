@@ -23,8 +23,8 @@ def find_version(*path):
 
 
 setup(
-    name="fileflood",
-    version=find_version('fileflood.py'),
+    name="rucola",
+    version=find_version('rucola.py'),
     license="MIT",
 
     description="A simple framework (not only) for static sites generation",
@@ -33,9 +33,9 @@ setup(
     author="Kasper Minciel",
     author_email="kasper.minciel@gmail.com",
 
-    url="https://github.com/lecnim/fileflood",
+    url="https://github.com/lecnim/rucola",
 
-    py_modules=['fileflood'],
+    py_modules=['rucola'],
     include_package_data=True,
     zip_safe=False,
 

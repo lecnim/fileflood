@@ -1,12 +1,12 @@
 import os
-from fileflood import Flood
+from rucola import Rucola
 from tests import FunctionalTest
 
 class Test(FunctionalTest):
 
     def test(self):
 
-        app = Flood(os.path.dirname(__file__))
+        app = Rucola(os.path.dirname(__file__))
 
         for page in app.find('*.html'):
             if page.path != 'index.html':
@@ -30,5 +30,5 @@ class Test(FunctionalTest):
     #
     #
     #     self.compare(
-    #         Flood(os.path.dirname(__file__)).use(ext).build()
+    #         Rucola(os.path.dirname(__file__)).use(ext).build()
     #     )
