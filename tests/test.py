@@ -1,7 +1,7 @@
 import os.path
 import types
 
-from rucola import Rucola, File, SOURCE_DIR, OUTPUT_DIR, pathmatch
+from rucola import Rucola, File, SOURCE_DIR, OUTPUT_DIR, pathmatch, PYTHON32
 from tests import BaseTest
 
 join = os.path.join
@@ -247,12 +247,14 @@ class TestRucola(BaseTest):
 
     def test_source_not_found(self):
 
+        exc = IOError if PYTHON32 else FileNotFoundError
+
         # Missing main directory.
-        self.assertRaises(OSError, Rucola, 'project')
+        self.assertRaises(exc, Rucola, 'project')
 
         # Missing source directory.
         self.create_dir('project')
-        self.assertRaises(OSError, Rucola, 'project')
+        self.assertRaises(exc, Rucola, 'project')
 
     def test_output(self):
 
