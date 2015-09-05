@@ -139,3 +139,7 @@ class FunctionalTest(unittest.TestCase):
         expected_files = self.get_files(expected)
         build_files = self.get_files(app.output)
         self.assertCountEqual(expected_files, build_files)
+
+
+class PluginTest(FunctionalTest):
+    pass

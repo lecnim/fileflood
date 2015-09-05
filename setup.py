@@ -49,4 +49,10 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Utilities"
     ],
+
+    # pip instalucolal rucola[plugins]
+    extras_require={
+        'plugins': ['rucola-ignore']
+    }
+
 )
