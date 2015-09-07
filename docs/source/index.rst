@@ -1,3 +1,11 @@
+.. Rucola documentation master file, created by
+   sphinx-quickstart on Sun Sep  6 03:09:31 2015.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+.. all this good in only one file.
+
+
 Rucola
 ======
 
@@ -46,7 +54,7 @@ Result: ::
 
 
 
-`More examples here! <https://github.com/lecnim/rucola/tree/master/examples/>`_.
+`More examples here! <http://www.python.org/>`_.
 
 
 Installation
@@ -159,4 +167,29 @@ Or write only chosen ones:
 Plugins
 -------
 
-TODO
+
+
+
+Welcome to Rucola's documentation!
+==================================
+
+
+Rucola is a simple, pluggable static site generator for Python.
+
+
+Contents:
+
+.. toctree::
+   :maxdepth: 2
+
+
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
