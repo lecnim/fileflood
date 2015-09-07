@@ -28,7 +28,7 @@ Content of ``build.py`` file:
 
    app = Rucola('path/to/dir')
    app.use(
-      Markdown()
+      Markdown(),
       Permalinks(':path/:title')
    )
    app.build()

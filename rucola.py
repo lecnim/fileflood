@@ -2,13 +2,18 @@
 Rucola
 A simple framework (not only) for static sites generation.
 
-TODO: Add descripiton here
+Use the :any:`Rucola` class and :any:`File` instances to
+create an application that generate a static site.
+See the :any:`Rucola` methods for more details, especially look at
+:any:`Rucola.find()`, :any:`Rucola.use()` and :any:`Rucola.build()`.
+Good luck!
 
 """
 
 # TODO: Logging msgs
 # TODO: Clear code
 # TODO: Clear output during init of Rucola() ?
+# TODO: Drop python 3.2 support
 
 import os
 import sys
@@ -39,39 +44,11 @@ info = log.info
 debug = lambda x: log.debug('  ' + x)
 
 
-console_log = logging.getLogger(__name__ + '.console')
-
-
-class ConsoleLogger:
-
-    def __init__(self):
-
-        self.logger = logging.getLogger(__name__ + hash(self))
-        self.handler = None
-        self.format = '%(message)s'
-        self.level = logging.DEBUG
-
-    def enable(self, level=None):
-
-        if level is None:
-            level = self.level
-
-        log.setLevel(level)
-        self.handler = logging.StreamHandler()
-        self.handler.setLevel(level)
-        self.handler.setFormatter(logging.Formatter(self.format))
-        log.addHandler(self.handler)
-
-    def disable(self):
-
-        log.removeHandler(self.handler)
-
-
 
 # Utils
 
 def compare_dirs(a, b):
-    """Returns True if a content of directory a is same as a content of b."""
+    """Returns True if a content of directory `a` is same as a content of `b`."""
 
     def compare(x, a, b):
 
@@ -91,6 +68,11 @@ def compare_dirs(a, b):
     return compare(dc, a, b)
 
 def split_path(path):
+    """Split a path using the system-depended separator slash.
+
+    >>> split_path(os.path.join('a', 'b', 'c'))
+    ['a', 'b', 'c']
+    """
 
     if not os.path.basename(path):
         path = os.path.dirname(path)
@@ -117,6 +99,8 @@ magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
 
 def has_magic(s):
+    """Returns True if a path uses a glob syntax characters."""
+
     if isinstance(s, bytes):
         match = magic_check_bytes.search(s)
     else:
@@ -125,6 +109,21 @@ def has_magic(s):
 
 
 def pathmatch(path, pattern):
+    """Returns `True` if `path` matches a pattern, else `False`.
+    Supports a glob syntax. I don't remember how does it works,
+    it splits `path` and `pattern` and compare elements using
+    the python `fnmatch` module.
+
+    Example:
+
+    >>> pathmatch('a/b/c', 'a/b/*')
+    True
+    >>> pathmatch('a/foo/bar', 'a/**/*')
+    True
+    >>> pathmatch('b/c/d', 'a/b/c')
+    False
+
+    """
 
     a, b = path.split(SEP), pattern.split(SEP)
     b_set = None
@@ -158,6 +157,12 @@ def pathmatch(path, pattern):
 
 
 class ContentReader:
+    """When called it opens a `self.path` file and reads it. That is all.
+    It is used by :any:`File` instances to save memory. Without it all
+    instances store their contents directly in a ``content`` key, even when
+    they are not used. Using this class, a content is read and returned only
+    when needed.
+    """
     def __init__(self, path):
         self.path = path
 
@@ -167,6 +172,26 @@ class ContentReader:
 
 
 class File(dict):
+    """Dict-like class that represent a file. Used by :any:`Rucola` to
+    generate representation of `source` directory. In most situations
+    you do not use this class, use :any:`Rucola.create()` instead.
+
+    Example:
+
+    >>> app = Rucola()
+    >>> file = File('cat.txt', 'meow')
+    File('cat.txt')
+    >>> app.build(file)
+
+    Initialization parameters:
+
+        `path`
+            Path where `content` will be written during building.
+
+        `content`
+            File content
+
+    """
 
     def __init__(self, path, content=None):
         super().__init__()
@@ -187,16 +212,21 @@ class File(dict):
     #
 
     def has_buffer(self):
+        """Returns `True` if a `content` is not set and it is dynamically
+        read from filesystem.
+        """
         x = dict.__getitem__(self, 'content')
         return isinstance(x, ContentReader)
 
     def get_buffer(self):
+        """Returns object that is used to read `content` from a filesystem."""
         return dict.__getitem__(self, 'content')
 
     # Shortcuts
 
     @property
     def path(self):
+        """Same as a `self['path']`"""
         return self['path']
 
     @path.setter
@@ -205,6 +235,10 @@ class File(dict):
 
     @property
     def content(self):
+        """Mostly a `content` property do not store a real file data, because
+        of memory saving. It stores a :any:`ContentReader` object that reads
+        a real file data only when `content` property is used.
+        Same as a `self['content']`"""
         return self['content']
 
     @content.setter
@@ -213,11 +247,34 @@ class File(dict):
 
 
 class Rucola:
+    """Rucola static site generator.
+
+    Initialization parameters:
+
+        `path`
+            A working directory. This directory should contains
+            `source` and `output` directories. If `None`, skip
+            the files loading process, `self.files` will be an empty list.
+            If path is not found, Rucola raises an exception.
+
+        `source (default: 'src')`
+            A directory relative to a `path` working directory.
+            All files are loaded from here. If path is not found,
+            Rucola raises an exception.
+
+        `output (default: 'build')`
+            A directory relative to a `path` working directory.
+            All built files are written here.
+
+        `pathmatcher`
+            Object used to test if a path matches a pattern.
+
+    """
 
     def __init__(self, path=None, source=SOURCE_DIR, output=OUTPUT_DIR, debug='info',
-                 pathmatch=pathmatch):
+                 pathmatcher=pathmatch):
 
-        self._pathmatch = pathmatch
+        self._pathmatch = pathmatcher
 
         if path is None:
 
@@ -246,10 +303,12 @@ class Rucola:
 
     @property
     def source(self):
+        """Absolute path to source directory. It cannot be changed!"""
         return self._source
 
     @property
     def output(self):
+        """Absolute path to output directory"""
         return self._output
 
     @output.setter
@@ -258,6 +317,8 @@ class Rucola:
         self._output = path
 
     def _find_files(self):
+        """Returns list with :any:`File` instances, loaded from
+        `self.source` directory"""
 
         result = []
 
@@ -277,14 +338,9 @@ class Rucola:
 
     #
 
-    def get(self, path):
-
-        for file in self.files:
-            if self._pathmatch(file.path, path):
-                return file
-        return None
-
     def _build_file(self, file):
+        """Write `content` of :any:`File` instance to
+        `self.output` directory."""
 
         debug(file.path)
 
@@ -300,10 +356,24 @@ class Rucola:
                 f.write(file.content)
 
     def build(self, target='**/*'):
-        """Builds files.
+        """Find all :any:`File` instances that matches a `target` pattern and write their
+        `content` to `self.output` directory. Returns list of built :any:`File` instances.
+        Pattern supports glob syntax, just like :any:`find()` method.
 
-        Args:
-            target: Accepts str or File object.
+        Also parameter `target` can be a :any:`File` instance:
+
+        >>> app = Rucola()
+        >>> file = app.get('foo.html')
+        >>> app.build(file)
+        File('foo.html')
+
+        It is possible to remove already built :any:`File` instances from a
+        :any:`Rucola` app. For example build all `html` files and remove them
+        from an app.
+
+        >>> for file in app.build('**/*.html'):
+        >>>     app.files.remove(file)
+
         """
 
         info('Building: ' + str(target))
@@ -322,19 +392,47 @@ class Rucola:
                 result.append(file)
             return result
 
-    def find(self, *patterns):
-        """
-        Returns list of all files that matches a given patterns.
+    def get(self, path):
+        """Returns a :any:`File` instance that matches a given `path` or
+        `None` if not found.
 
-        Order of paths is not changing the order of returned files.
+        Example:
+
+        >>> app = Rucola()
+        >>> file = app.get('path/to/file')
+        """
+
+        for file in self.files:
+            if self._pathmatch(file.path, path):
+                return file
+        return None
+
+    def find(self, *patterns):
+        """Returns list of all :any:`File` instances that matches a given `patterns`.
+        The order of patterns arguments do not change the order of returned instances.
+
+        Pattern supports glob syntax:
+
+        >>> '*.html'       # Matches all html files in a current directory
+        >>> '**/*.html'    # Matches all html files in all directories
+        >>> '?.html'       # Matches <any-char>.html like a.html, b.html etc.
+
+        It is possible to remove files from a :any:`Rucola` app in a loop:
+
+        >>> app = Rucola()
+        >>> for file in app.find('*.html'):
+        >>>     app.files.remove(file)
+
+
         """
 
         return [i for i in self.ifind(*patterns)]
 
 
     def ifind(self, *patterns):
-        """
-        Not safe-remove in place.
+        """Iterate :any:`File` instances that matches a given patterns.
+        Same as a :any:`find()` method but not safe to remove files
+        from a :any:`Rucola` app in a loop.
         """
 
         for file in self.files:
@@ -344,6 +442,9 @@ class Rucola:
                     break
 
     def clear_output(self):
+        """Removes all files in a `self.output` directory. Returns a `True` if
+        the operation was successful or a `False` if a `output` directory
+        do not exists."""
 
         if os.path.exists(self.output):
             info('Clearing output directory')
@@ -354,6 +455,19 @@ class Rucola:
         return False
 
     def create(self, path, content=''):
+        """Returns a new :any:`File` instance with given `path` and `content`.
+        It is added to `self.files` list. If the :any:`File` with a given `path`
+        already exists, returns `None` and do not create anything.
+
+        Example:
+
+        >>> app = Rucola()
+        >>> file = app.create('path/to/banana.txt', 'I am banana!')
+        File('path/to/banana.txt')
+        """
+
+        if self.get(path):
+            return None
 
         info('Creating file: ' + path)
 
@@ -362,6 +476,18 @@ class Rucola:
         return f
 
     def use(self, *plugins):
+        """Call each `plugin` with `self` as a argument. Returns `self`.
+
+        A plugin is just a callable object, can be a function or a class
+        or anything:
+
+        >>> def foo(x):
+        >>>     x.output = 'new/output'
+        >>> app = Rucola()
+        >>> app.use(foo)
+        >>> app.output
+        'new/output'
+        """
 
         for i in plugins:
             if callable(i):

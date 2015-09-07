@@ -1,5 +1,5 @@
-rucola module
-=============
+Rucola API
+==========
 
 .. automodule:: rucola
     :members:

@@ -53,7 +53,9 @@ setup(
     # pip instalucolal rucola[plugins]
     extras_require={
         'plugins': ['rucola-ignore',
-                    'rucola-markdown']
+                    'rucola-markdown',
+                    'rucola-mustache',
+                    'rucola-yamlfm']
     }
 
 )
