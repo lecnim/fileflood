@@ -428,7 +428,7 @@ class TestRucola(BaseTest):
         r.create('utf', 'ĄŚŹ当世')
         r.build('utf')
 
-        self.assertEqual(self.read_file('build/utf'),'ĄŚŹ当世')
+        self.assertEqual(self.read_file('build/utf'), 'ĄŚŹ当世')
 
     def test_create_bytes(self):
 

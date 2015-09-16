@@ -350,9 +350,12 @@ class Rucola:
             shutil.copy(file.get_buffer().path, os.path.join(self.output, file.path))
         else:
 
-            mode = 'wb' if isinstance(file.content, bytes) else 'w'
+            if isinstance(file.content, bytes):
+                mode, encoding = 'wb', None
+            else:
+                mode, encoding = 'w', 'utf-8'
 
-            with open(os.path.join(self.output, file.path), mode) as f:
+            with open(os.path.join(self.output, file.path), mode, encoding=encoding) as f:
                 f.write(file.content)
 
     def build(self, target='**/*'):

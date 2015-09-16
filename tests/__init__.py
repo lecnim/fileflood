@@ -36,7 +36,7 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(os.path.exists(fp),
                         msg='path not found: ' + fp)
 
-        with open(fp) as file:
+        with open(fp, encoding='utf-8') as file:
             return file.read()
 
     def create_file(self, path, content=''):
