@@ -25,7 +25,7 @@ import logging
 import filecmp
 
 __author__ = 'Kasper Minciel'
-__version__ = '0.0.1.dev1'
+__version__ = '0.0.1.dev2'
 __license__ = 'MIT'
 
 # Minimum supported python: 3.2
@@ -179,7 +179,7 @@ class File(dict):
     Example:
 
     >>> app = Rucola()
-    >>> file = File('cat.txt', 'meow')
+    >>> file = File('cat.txt', content='meow')
     File('cat.txt')
     >>> app.build(file)
 
@@ -189,12 +189,18 @@ class File(dict):
             Path where `content` will be written during building.
 
         `content`
-            File content
+            File content.
+
+        `global_metadata`
+            If a key is not found, look for it in this dict. For example used
+            to get access to global ``Rucola.metadata``.
 
     """
 
-    def __init__(self, path, content=None):
+    def __init__(self, path, content=None, global_metadata=None):
         super().__init__()
+
+        self.globals = global_metadata
 
         self['path'] = path
         if content is None:
@@ -207,7 +213,12 @@ class File(dict):
             x = dict.__getitem__(self, key)
             if callable(x):
                 return x()
-        return dict.__getitem__(self, key)
+        try:
+            return dict.__getitem__(self, key)
+        except KeyError:
+            if self.globals and key in self.globals:
+                return self.globals[key]
+            raise
 
     #
 
@@ -271,10 +282,12 @@ class Rucola:
 
     """
 
-    def __init__(self, path=None, source=SOURCE_DIR, output=OUTPUT_DIR, debug='info',
+    def __init__(self, path=None, source=SOURCE_DIR, output=OUTPUT_DIR,
                  pathmatcher=pathmatch):
 
         self._pathmatch = pathmatcher
+
+        self._metadata = {}
 
         if path is None:
 
@@ -316,6 +329,16 @@ class Rucola:
         info('Output: ' + path)
         self._output = path
 
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        for f in self.files:
+            f.globals = value
+        self._metadata = value
+
     def _find_files(self):
         """Returns list with :any:`File` instances, loaded from
         `self.source` directory"""
@@ -332,7 +355,11 @@ class Rucola:
 
                 debug(p)
 
-                result.append(File(p, ContentReader(os.path.join(path, f))))
+                result.append(
+                    File(p,
+                         content=ContentReader(os.path.join(path, f)),
+                         global_metadata=self.metadata)
+                )
 
         return result
 
@@ -465,16 +492,18 @@ class Rucola:
         Example:
 
         >>> app = Rucola()
-        >>> file = app.create('path/to/banana.txt', 'I am banana!')
+        >>> file = app.create('path/to/banana.txt', content='I am banana!')
         File('path/to/banana.txt')
         """
+
+        # TODO: Remove content parameter, use metadata instead
 
         if self.get(path):
             return None
 
         info('Creating file: ' + path)
 
-        f = File(path, content)
+        f = File(path, content, global_metadata=self.metadata)
         self.files.append(f)
         return f
 

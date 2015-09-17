@@ -144,7 +144,6 @@ class TestPathname(BaseTest):
         self.assertTrue(pathmatch('foo/world.txt', p))
 
 
-
 class TestFile(BaseTest):
     """File"""
 
@@ -181,6 +180,22 @@ class TestFile(BaseTest):
 
         f = File('foo', content=x)
         self.assertEqual('banana', f.content)
+
+    def test_global_metadata(self):
+
+        g = {'fruit': 'banana',
+             'animal': 'dog'}
+        f = File('foo', global_metadata=g)
+        f['animal'] = 'cat'
+
+        self.assertEqual(f['fruit'], 'banana')
+        self.assertEqual(f['animal'], 'cat')
+
+    def test_metadata_not_found(self):
+
+        f = File('foo')
+        with self.assertRaises(KeyError):
+            f['notfound']
 
 
 class TestRucola(BaseTest):
@@ -264,6 +279,17 @@ class TestRucola(BaseTest):
         Rucola('.', output='ready').build()
 
         self.assertEqual(self.read_file('ready/foo.txt'), 'test')
+
+    # metadata
+
+    def test_global_metadata(self):
+
+        r = Rucola()
+        r.metadata = {'foo': 'banana'}
+        file = r.create('text.html')
+        r.metadata = {'foo': 'apple'}
+
+        self.assertEqual(file['foo'], 'apple')
 
     # build()
 

@@ -55,7 +55,9 @@ setup(
         'plugins': ['rucola-ignore',
                     'rucola-markdown',
                     'rucola-mustache',
-                    'rucola-yamlfm']
+                    'rucola-yamlfm',
+                    'rucola-drafts',
+                    'rucola-permalinks']
     }
 
 )
