@@ -3,13 +3,13 @@
 rucola
 
 - [ ] 5h: Finish docs
-- [ ] 2h: Drafts plugin
+- [x] 2h: Drafts plugin
 - [ ] 2h: Permalinks plugin
 - [ ] 4h: Examples that uses plugins
 
 rucola-markdown
 
-- [ ] 2h: Add render_markdown(target=(str, File)) to rucola-markdown plugin
+- [x] 2h: Add render_markdown(target=(str, File)) to rucola-markdown plugin
 
 rucola-mustache
 
@@ -19,4 +19,4 @@ rucola-mustache
 
     ---
 
-    26h / 7h = ~4 days
+    18h / 7h = ~3 days
