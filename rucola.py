@@ -207,6 +207,9 @@ class File(dict):
             content = ''
         self['content'] = content
 
+    def __repr__(self):
+        return 'File({})'.format(self.path)
+
     def __getitem__(self, key):
 
         if key == 'content':
@@ -484,7 +487,7 @@ class Rucola:
             return True
         return False
 
-    def create(self, path, content=''):
+    def create(self, path, **metadata):
         """Returns a new :any:`File` instance with given `path` and `content`.
         It is added to `self.files` list. If the :any:`File` with a given `path`
         already exists, returns `None` and do not create anything.
@@ -503,7 +506,8 @@ class Rucola:
 
         info('Creating file: ' + path)
 
-        f = File(path, content, global_metadata=self.metadata)
+        f = File(path, global_metadata=self.metadata)
+        f.update(metadata)
         self.files.append(f)
         return f
 

@@ -6,7 +6,7 @@ rucola
 - [x] 2h: Drafts plugin
 - [ ] 2h: Permalinks plugin
 - [ ] 4h: Examples that uses plugins
-- [ ] 1h: Remove content parameter from File, use metadata instead
+- [?] 1h: Remove content parameter from File, use metadata instead
 - [x] 4h: Add metadata parameter + function to stores globals
 
 rucola-markdown

@@ -439,7 +439,7 @@ class TestRucola(BaseTest):
         self.create_dir(SOURCE_DIR)
         r = Rucola('.', output='build')
 
-        file = r.create('foo.html', 'bar')
+        file = r.create('foo.html', content='bar')
         self.assertIsInstance(file, File)
         self.assertEqual(file['path'], 'foo.html')
         self.assertEqual(file['content'], 'bar')
@@ -451,7 +451,7 @@ class TestRucola(BaseTest):
         """create() should supports the utf content"""
 
         r = self.example_app()
-        r.create('utf', 'ĄŚŹ当世')
+        r.create('utf', content='ĄŚŹ当世')
         r.build('utf')
 
         self.assertEqual(self.read_file('build/utf'), 'ĄŚŹ当世')
@@ -459,7 +459,7 @@ class TestRucola(BaseTest):
     def test_create_bytes(self):
 
         r = self.example_app()
-        r.create('bytes', b'1234')
+        r.create('bytes', content=b'1234')
         r.build()
 
         self.assertEqual(self.read_file('build/bytes'), '1234')
